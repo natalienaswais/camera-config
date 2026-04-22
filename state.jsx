@@ -20,13 +20,13 @@ function buildScenario(scenario) {
       return { live, draft: { ...pend }, pending: pend, syncStatus: 'queued' };
     }
     case 'syncing': {
-      const pend = { ...live, timezone: 'Europe/Riga (+02:00)', audioRecording: false, wifiSsid: 'Mapon-Cam-New' };
+      const pend = { ...live, timezone: 'Europe/Riga (+02:00)', audioRecording: false, wifiSsid: 'brand-Cam-New' };
       return { live, draft: { ...pend }, pending: pend, syncStatus: 'syncing' };
     }
     case 'partial': {
-      const pend = { ...live, timezone: 'Europe/Riga (+02:00)', audioRecording: false, wifiSsid: 'Mapon-Cam-New', dmsYawning: true };
+      const pend = { ...live, timezone: 'Europe/Riga (+02:00)', audioRecording: false, wifiSsid: 'brand-Cam-New', dmsYawning: true };
       // audio and ssid applied; timezone + dms failed
-      const applied = { ...live, audioRecording: false, wifiSsid: 'Mapon-Cam-New' };
+      const applied = { ...live, audioRecording: false, wifiSsid: 'brand-Cam-New' };
       return {
         live: applied, draft: { ...pend }, pending: pend,
         syncStatus: 'partial',
@@ -43,7 +43,7 @@ function buildScenario(scenario) {
       const pend = {
         ...live,
         cameraName: 'Mercedes-Benz Actros 1853 Long-Haul Prime Mover',
-        wifiSsid: 'Mapon-Fleet-Corporate-LT-Depot-3-Extended',
+        wifiSsid: 'brand-Fleet-Corporate-LT-Depot-3-Extended',
         vehicle: 'CD 5678',
         timezone: 'America/New_York (-05:00)',
         ttsLanguage: 'Latviešu',
