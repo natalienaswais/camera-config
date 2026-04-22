@@ -19,7 +19,7 @@ const DEFAULTS = {
   channel1Rotation: 'none',      // 'none' | 'vertical'
   channel2Rotation: 'none',
   wifiEnabled: true,
-  wifiSsid: 'Mapon-Cam-3333',
+  wifiSsid: 'brand-Cam-3333',
   wifiPassword: '',
 
   // Camera security
@@ -83,7 +83,7 @@ const ACTIVITY = [
   { id: 1, title: 'Timezone changed', diff: 'Europe/Riga → Pacific/Niue', when: '13 Nov, 11:26', status: 'applied' },
   { id: 2, title: 'DMS events updated', diff: 'Yawning: Off → On', when: '13 Nov, 11:26', status: 'applied' },
   { id: 3, title: 'Privacy mode enabled', diff: 'Off → On', when: '13 Nov, 11:26', status: 'applied' },
-  { id: 4, title: 'Wi-Fi SSID changed', diff: 'Mapon-Cam-2 → Mapon-Cam-3333', when: '12 Nov, 09:04', status: 'applied' },
+  { id: 4, title: 'Wi-Fi SSID changed', diff: 'brand-Cam-2 → brand-Cam-3333', when: '12 Nov, 09:04', status: 'applied' },
   { id: 5, title: 'Audio recording enabled', diff: 'Off → On', when: '08 Nov, 14:12', status: 'applied' },
 ];
 
