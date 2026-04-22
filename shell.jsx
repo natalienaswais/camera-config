@@ -43,7 +43,6 @@ const CfgTopBar = () => (
     height: 56, background: '#fff', borderBottom: '1px solid #E4E5E6',
     display: 'flex', alignItems: 'center', padding: '0 20px', gap: 16, flexShrink: 0,
   }}>
-    <img src="assets/mapon-logo-dark.svg" alt="Mapon" style={{ height: 24 }} />
     <div style={{ flex: 1 }} />
     <div className="topbar-secondary" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <button style={{ ...cfgIconBtn, border: 'none', background: 'transparent' }}>
