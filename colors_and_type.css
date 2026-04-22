@@ -1,0 +1,173 @@
+/* ============================================================
+   Mapon Design System — colors & type tokens
+   Source of truth: /BRAND-BOOK.fig (BB-2023 page)
+   ============================================================ */
+
+/* Inter — shipped locally (18pt optical size for body/UI, 28pt for display).
+   Upright weights only; italics available in fonts/ but not wired here. */
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 100; src: url('./fonts/Inter_18pt-Thin.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 200; src: url('./fonts/Inter_18pt-ExtraLight.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 300; src: url('./fonts/Inter_18pt-Light.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; src: url('./fonts/Inter_18pt-Regular.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; src: url('./fonts/Inter_18pt-Medium.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; src: url('./fonts/Inter_18pt-SemiBold.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; src: url('./fonts/Inter_18pt-Bold.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 800; src: url('./fonts/Inter_18pt-ExtraBold.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 900; src: url('./fonts/Inter_18pt-Black.ttf') format('truetype'); font-display: swap; }
+
+/* Inter Display — optical size 28pt, used for .mega / .hero / .h1 headlines */
+@font-face { font-family: 'Inter Display'; font-style: normal; font-weight: 400; src: url('./fonts/Inter_28pt-Regular.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Inter Display'; font-style: normal; font-weight: 500; src: url('./fonts/Inter_28pt-Medium.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Inter Display'; font-style: normal; font-weight: 600; src: url('./fonts/Inter_28pt-SemiBold.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Inter Display'; font-style: normal; font-weight: 700; src: url('./fonts/Inter_28pt-Bold.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Inter Display'; font-style: normal; font-weight: 800; src: url('./fonts/Inter_28pt-ExtraBold.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Inter Display'; font-style: normal; font-weight: 900; src: url('./fonts/Inter_28pt-Black.ttf') format('truetype'); font-display: swap; }
+
+:root {
+  /* ---- Primary brand colors (logo / CTAs) ---- */
+  --mapon-green:       #98CA02; /* Pantone 368 C — "Green" */
+  --mapon-dark-green:  #65B200; /* Pantone 368 C — "Dark Green" — primary CTA */
+  --mapon-dark:        #1F292F; /* Pantone 433 C — "Dark" — text / bg */
+  --mapon-light-grey:  #F4F4F4; /* Pantone P 179-1 C — "Light grey" */
+
+  /* ---- Accent colors (marketing / illustration) ---- */
+  --mapon-orange:      #FF996D; /* 1565 C */
+  --mapon-dark-blue:   #222E50; /* 533 C  */
+  --mapon-yellow:      #FFC652; /* 135 C  */
+  --mapon-salmon:      #FC8F88; /* 170 U  */
+  --mapon-kindablue:   #B4C7FF; /* 2716 U */
+  --mapon-lightgreen:  #CBF3F0; /* 317 C  */
+  --mapon-medium-blue: #5B84FD; /* 2727 C */
+
+  /* ---- Monochrome scale (UI surfaces, text) ---- */
+  --mono-black:   #000000;
+  --mono-dark:    #1F292F;  /* body text on white */
+  --mono-charcoal:#384045;  /* headings / strong */
+  --mono-gray-3:  #797F82;  /* secondary text */
+  --mono-gray-4:  #BBBEC0;  /* borders / disabled text */
+  --mono-gray-5:  #E4E5E6;  /* divider / borders */
+  --mono-gray-6:  #F4F4F4;  /* subtle fill */
+  --mono-gray-8:  #F7F8F8;  /* near-white surface */
+  --mono-white:   #FFFFFF;
+
+  /* ---- Semantic tokens ---- */
+  --fg-1:         var(--mono-dark);      /* primary text */
+  --fg-2:         var(--mono-charcoal);  /* strong / headings */
+  --fg-muted:     var(--mono-gray-3);    /* secondary text */
+  --fg-disabled:  var(--mono-gray-4);
+  --fg-on-dark:   #FFFFFF;
+  --fg-on-green:  #FFFFFF;
+
+  --bg-page:      #FFFFFF;
+  --bg-surface:   var(--mono-gray-8);
+  --bg-muted:     var(--mono-gray-6);
+  --bg-dark:      var(--mono-dark);      /* deck / hero sections */
+
+  --border-1:     var(--mono-gray-5);
+  --border-2:     var(--mono-gray-4);
+
+  --accent:       var(--mapon-dark-green); /* primary CTA bg */
+  --accent-hover: #569A00;                 /* ~10% darker */
+  --accent-text:  var(--mapon-dark-green);
+
+  /* ---- Type ---- */
+  --font-sans: 'Inter', system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+  --font-display: 'Inter Display', 'Inter', system-ui, sans-serif; /* 28pt optical size for headlines */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Sizes (from Brand Book Font styles page) */
+  --fs-mega:         80px;  /* "Mega title 80" */
+  --fs-hero:         140px; /* cover heroes */
+  --fs-h1:           60px;
+  --fs-h2:           46px;
+  --fs-h3:           40px;  /* implied */
+  --fs-h4:           36px;
+  --fs-h5:           24px;
+  --fs-p20:          20px;
+  --fs-p16:          16px;
+  --fs-p14:          14px;
+  --fs-p12:          12px;
+
+  /* Weights */
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-bold:    700;
+  --fw-extra:   800;
+  --fw-black:   900;
+
+  /* Line heights — Brand Book specifies 100% (tight) for display type;
+     we use slightly looser for paragraphs for readability. */
+  --lh-tight:   1.0;
+  --lh-snug:    1.15;
+  --lh-body:    1.5;
+
+  /* ---- Spacing (4px scale — not explicit in brandbook; inferred from layouts) ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  /* ---- Radii (observed in brandbook: 15 for cards, 30 for large cards, 60 for social, 76 for pill buttons, 200 for pin) ---- */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 15px;
+  --radius-xl: 30px;
+  --radius-2xl: 60px;
+  --radius-pill: 999px;
+
+  /* ---- Shadows (minimal in brand; used only for elevation on surfaces) ---- */
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-2: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-3: 0 10px 30px rgba(0,0,0,0.11);
+  --shadow-4: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+/* ============================================================
+   Semantic element resets / base type
+   ============================================================ */
+
+html, body { font-family: var(--font-sans); color: var(--fg-1); background: var(--bg-page); }
+
+h1, .h1 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-h1);
+  line-height: var(--lh-tight);
+  color: var(--fg-2);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+h2, .h2 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-h2);
+  line-height: var(--lh-tight);
+  color: var(--fg-2);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+h3, .h3 { font-weight: var(--fw-bold); font-size: var(--fs-h3); line-height: var(--lh-snug); margin: 0; }
+h4, .h4 { font-weight: var(--fw-bold); font-size: var(--fs-h4); line-height: var(--lh-snug); margin: 0; }
+h5, .h5 { font-weight: var(--fw-bold); font-size: var(--fs-h5); line-height: var(--lh-snug); margin: 0; }
+
+.mega    { font-weight: var(--fw-bold); font-size: var(--fs-mega); line-height: var(--lh-tight); letter-spacing: -0.02em; }
+.hero    { font-weight: var(--fw-bold); font-size: var(--fs-hero); line-height: var(--lh-tight); letter-spacing: -0.02em; }
+
+p, .p    { font-size: var(--fs-p16); line-height: var(--lh-body); margin: 0; }
+.p-20    { font-size: var(--fs-p20); line-height: var(--lh-body); }
+.p-14    { font-size: var(--fs-p14); line-height: var(--lh-body); }
+.p-12    { font-size: var(--fs-p12); line-height: var(--lh-body); }
+.bold    { font-weight: var(--fw-bold); }
+.black   { font-weight: var(--fw-black); }
+
+a        { color: var(--accent-text); text-decoration: none; font-weight: var(--fw-medium); }
+a:hover  { text-decoration: underline; }
+
+code, kbd, samp { font-family: var(--font-mono); font-size: 0.9em; background: var(--bg-muted); padding: 2px 6px; border-radius: 4px; }
+
+::selection { background: var(--mapon-green); color: var(--mapon-dark); }
