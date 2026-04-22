@@ -63,7 +63,7 @@ const CfgTopBar = () => (
         </div>
         <div style={{ fontSize: 13, lineHeight: 1.2 }}>
           <div style={{ fontWeight: 600, color: '#1F292F' }}>John Snow</div>
-          <div style={{ fontSize: 11, color: '#797F82' }}>Mapon Company</div>
+          <div style={{ fontSize: 11, color: '#797F82' }}> Company</div>
         </div>
         <i data-lucide="more-vertical" style={{ width: 16, height: 16, color: '#797F82' }} />
       </div>
