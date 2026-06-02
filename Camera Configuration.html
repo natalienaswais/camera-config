@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Camera configuration</title>
+  <link rel="stylesheet" href="assets/colors_and_type.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: #F4F4F4; font-family: 'Inter', system-ui, sans-serif; color: #1F292F; -webkit-font-smoothing: antialiased; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Reset the top-chrome the prototype injects so the full app layout
+       works both full-bleed and inside a DCArtboard frame. */
+    .cam-prototype { display: flex; flex-direction: column; min-height: 100%; background: #F4F4F4; }
+    .cam-prototype .app-row { display: flex; flex: 1; min-height: 0; }
+
+    /* ── Responsive breakpoints ─────────────────────────────────
+       ≥ 1280px  — full desktop: icon sidebar + form + activity side-by-side
+       960–1279  — activity panel stacks above form (still wide form)
+       720–959   — icon sidebar hides, field rows compact
+       < 720     — mobile-ish: fully stacked, reduced padding              */
+
+    .app-shell          { display: flex; flex-direction: column; min-height: 100vh; }
+    .app-body           { display: flex; flex: 1; min-height: 0; }
+    .app-main           { flex: 1; min-width: 0; padding: 24px 28px; }
+    .app-columns        { display: flex; gap: 20px; align-items: flex-start; }
+    .activity-col       { width: 300px; flex-shrink: 0; }
+    .form-col           { flex: 1; min-width: 0; background: #fff; border: 1px solid #E4E5E6; border-radius: 4px; padding: 20px 24px; }
+
+    @media (max-width: 1279px) {
+      .app-columns      { flex-direction: column; }
+      .activity-col     { width: 100%; }
+      .form-col         { width: 100%; }
+    }
+    @media (max-width: 959px) {
+      .icon-sidebar     { display: none !important; }
+      .app-main         { padding: 18px 16px; }
+      .form-col         { padding: 16px 16px; }
+    }
+    @media (max-width: 720px) {
+      .app-columns      { flex-direction: column; }
+      .app-main         { padding: 14px 12px; }
+      .form-col         { padding: 14px 12px; }
+      .page-header-connectivity { display: none !important; }
+    }
+
+    /* Topbar: hide secondary chrome on narrow screens */
+    @media (max-width: 720px) {
+      .topbar-secondary { display: none !important; }
+    }
+
+    /* Tabs: allow horizontal scroll when too many to fit */
+    .tabs-row           { overflow-x: auto; scrollbar-width: none; }
+    .tabs-row::-webkit-scrollbar { display: none; }
+
+    /* Field row responsive behavior is handled inline via container queries
+       on the form-col (JS reads width). See useContainerWidth in variations. */
+
+    /* Tweaks panel */
+    .tweaks-panel {
+      position: fixed; bottom: 16px; right: 16px; z-index: 1000;
+      background: #fff; border: 1px solid #E4E5E6; border-radius: 4px;
+      padding: 14px 16px; width: 280px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.11); font-size: 12px;
+    }
+    .tweaks-panel h4 { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: #1F292F; display: flex; align-items: center; gap: 6px; }
+    .tweaks-panel .group { margin-bottom: 12px; }
+    .tweaks-panel .group-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #797F82; margin-bottom: 6px; }
+    .tweaks-panel .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .tweaks-panel button { font-family: inherit; font-size: 11px; font-weight: 600; padding: 6px 8px; border-radius: 6px; border: 1px solid #E4E5E6; background: #fff; color: #384045; cursor: pointer; text-align: left; }
+    .tweaks-panel button.active { background: #65B200; color: #fff; border-color: #65B200; }
+
+    .variation-label { font-size: 13px; color: rgba(60,50,40,.7); }
+    .variation-note { font-size: 12px; color: rgba(60,50,40,.55); max-width: 280px; margin-top: 4px; line-height: 1.45; }
+
+    select, input, button { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    // TWEAKS defaults — persisted via editmode.
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "scenario": "partial",
+      "variation": "inline",
+      "online": true,
+      "viewMode": "prototype",
+      "brand": "Howen"
+    }/*EDITMODE-END*/;
+  </script>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script type="text/babel" src="assets/design-canvas.jsx?v=1781400000"></script>
+  <script type="text/babel" src="assets/data.jsx?v=1781400000"></script>
+  <script type="text/babel" src="assets/shell.jsx?v=1781400000"></script>
+  <script type="text/babel" src="assets/state.jsx?v=1781400000"></script>
+  <script type="text/babel" src="assets/tabs.jsx?v=1781400000"></script>
+  <script type="text/babel" src="assets/variations.jsx?v=1781400000"></script>
+  <script type="text/babel" src="assets/screen.jsx?v=1781400000"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    class ErrorBoundary extends React.Component {
+      constructor(props) { super(props); this.state = { error: null }; }
+      static getDerivedStateFromError(error) { return { error }; }
+      render() {
+        if (this.state.error) {
+          return (
+            <div style={{ padding: 32, fontFamily: 'monospace', fontSize: 13 }}>
+              <strong style={{ color: '#F23E44' }}>Render error:</strong>
+              <pre style={{ whiteSpace: 'pre-wrap', marginTop: 8 }}>{String(this.state.error)}{'\n'}{this.state.error?.stack}</pre>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
+
+    const SCENARIOS = [
+      { key: 'in-sync', label: 'In sync' },
+      { key: 'unsaved', label: 'Unsaved edits' },
+      { key: 'queued', label: 'Pending (offline)' },
+      { key: 'syncing', label: 'Syncing' },
+      { key: 'partial', label: 'Partially applied' },
+      { key: 'failed', label: 'All failed' },
+      { key: 'long-values', label: 'Long values (edge)' },
+    ];
+
+    const VARIATION_KEYS = [
+      { key: 'inline',  label: 'A · Inline diff (side)' },
+      { key: 'below',   label: 'B · Diff below field' },
+      { key: 'hint',    label: 'C · Field hints' },
+      { key: 'summary', label: 'D · Summary bar' },
+    ];
+
+    function TweaksPanel({ tweaks, setTweaks }) {
+      const [visible, setVisible] = useState(false);
+
+      useEffect(() => {
+        const onMsg = (e) => {
+          if (!e.data || !e.data.type) return;
+          if (e.data.type === '__activate_edit_mode') setVisible(true);
+          if (e.data.type === '__deactivate_edit_mode') setVisible(false);
+        };
+        window.addEventListener('message', onMsg);
+        window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+        return () => window.removeEventListener('message', onMsg);
+      }, []);
+
+      const patch = (patch) => {
+        const next = { ...tweaks, ...patch };
+        setTweaks(next);
+        window.parent.postMessage({ type: '__edit_mode_set_keys', edits: patch }, '*');
+      };
+
+      if (!visible) return null;
+
+      return (
+        <div className="tweaks-panel">
+          <h4><i data-lucide="sliders" style={{width:14,height:14}}/> Tweaks</h4>
+
+          <div className="group">
+            <div className="group-label">View</div>
+            <div className="opts">
+              {[['prototype','Full prototype'], ['canvas','Compare 3 options']].map(([k,l]) => (
+                <button key={k} className={tweaks.viewMode === k ? 'active' : ''} onClick={() => patch({ viewMode: k })}>{l}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="group">
+            <div className="group-label">Camera brand</div>
+            <div className="opts">
+              {['Howen','Queclink'].map(b => (
+                <button key={b} className={tweaks.brand === b ? 'active' : ''} onClick={() => patch({ brand: b })}>{b}</button>
+              ))}
+            </div>
+          </div>
+
+          {tweaks.viewMode === 'prototype' && (
+            <div className="group">
+              <div className="group-label">Live vs pending UX</div>
+              <div className="opts" style={{gridTemplateColumns:'1fr'}}>
+                {VARIATION_KEYS.map(v => (
+                  <button key={v.key} className={tweaks.variation === v.key ? 'active' : ''} onClick={() => patch({ variation: v.key })}>{v.label}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="group">
+            <div className="group-label">Sync state</div>
+            <div className="opts">
+              {SCENARIOS.map(s => (
+                <button key={s.key} className={tweaks.scenario === s.key ? 'active' : ''} onClick={() => patch({ scenario: s.key })}>{s.label}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="group" style={{marginBottom:0}}>
+            <div className="group-label">Camera connectivity</div>
+            <div className="opts">
+              <button className={tweaks.online ? 'active' : ''} onClick={() => patch({ online: true })}>Online</button>
+              <button className={!tweaks.online ? 'active' : ''} onClick={() => patch({ online: false })}>Offline</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Mini prototype wrapper for design canvas (each variation in its own artboard)
+    function MiniProto({ variation, scenario, online, brand }) {
+      return (
+        <div style={{ width: 1280, height: 880, overflow: 'hidden' }}>
+          <CameraConfigScreen variation={variation} scenario={scenario} online={online} lastSeen="2 minutes ago" cameraBrand={brand} />
+        </div>
+      );
+    }
+
+    function CompareCanvas({ tweaks }) {
+      return (
+        <DesignCanvas>
+          <DCSection id="variations" title="Live vs Pending — four directions"
+                     subtitle="Same prototype, four approaches to surfacing what the camera is really using. Open any artboard (↗) to fill the screen.">
+            {VARIATION_KEYS.map(v => (
+              <DCArtboard key={v.key} id={v.key} label={v.label} width={1280} height={880}>
+                <MiniProto variation={v.key} scenario={tweaks.scenario} online={tweaks.online} brand={tweaks.brand} />
+              </DCArtboard>
+            ))}
+          </DCSection>
+
+          <DCSection id="brands" title="Same save, two manufacturers"
+                     subtitle="Identical edits (timezone + audio + DMS yawning & smoking) routed through each brand's command model. Howen bundles every DMS event into one row; Queclink emits one AT+GTDSS per event.">
+            {['Howen','Queclink'].map(b => (
+              <DCArtboard key={b} id={`brand-${b}`} label={b} width={1280} height={880}>
+                <MiniProto variation="inline" scenario="failed" online={true} brand={b} />
+              </DCArtboard>
+            ))}
+          </DCSection>
+
+          <DCSection id="scenarios" title="Sync states (variation A)"
+                     subtitle="Walk through the state machine: clean → unsaved → queued → syncing → partial → failed.">
+            {SCENARIOS.map(s => (
+              <DCArtboard key={s.key} id={s.key} label={s.label} width={1280} height={880}>
+                <MiniProto variation="inline" scenario={s.key} online={s.key === 'queued' ? false : true} brand={tweaks.brand} />
+              </DCArtboard>
+            ))}
+          </DCSection>
+
+          <DCPostIt top={-40} right={220} rotate={-3} width={240}>
+            Toggle sync state + connectivity from the Tweaks panel (bottom-right).
+            Switch to "Full prototype" to interact with inputs and hit Save.
+          </DCPostIt>
+        </DesignCanvas>
+      );
+    }
+
+    // ── Camera list data ────────────────────────────────────────
+    const CAMERAS_DATA = [
+      { id: '1234',  brand: 'Howen',       vehicle: 'DB-2348', vehicleType: 'Car',   channels: 3, subscription: 'Active',   subscriptionExpiry: null,          configStatus: 'failed',  warnings: 3, warningsOk: false },
+      { id: '5678',  brand: 'Howen',       vehicle: 'DB-2348', vehicleType: 'Van',   channels: 1, subscription: 'Expired',  subscriptionExpiry: '01 Jan 2025', configStatus: null,      warnings: 1, warningsOk: false },
+      { id: '1111',  brand: 'Queclink', vehicle: 'DF-2235', vehicleType: 'Bus', channels: 4, subscription: 'Active',   subscriptionExpiry: null,          configStatus: 'queued',  warnings: 1, warningsOk: false },
+      { id: '3333',  brand: 'Howen',       vehicle: 'KN-5478', vehicleType: 'Truck', channels: 1, subscription: 'Active',   subscriptionExpiry: null,          configStatus: 'applied', warnings: 0, warningsOk: true  },
+      { id: '6666',  brand: 'Queclink', vehicle: 'DS-1029', vehicleType: 'Bus', channels: 4, subscription: 'Inactive', subscriptionExpiry: null,          configStatus: null,      warnings: 1, warningsOk: false },
+      { id: '01010', brand: 'Queclink', vehicle: 'NN-4587', vehicleType: 'Bus', channels: 5, subscription: 'Active',   subscriptionExpiry: null,          configStatus: 'applied', warnings: 1, warningsOk: false },
+    ];
+
+    const CONFIG_STATUS_TO_SCENARIO = { failed: 'failed', queued: 'queued', applied: 'in-sync' };
+
+    // ── Entry point list screen ─────────────────────────────────
+    function CameraListScreen({ onSelectCamera }) {
+      const [search, setSearch] = useState('');
+
+      const vehicleIcon = t => t === 'Car' ? 'car' : t === 'Bus' ? 'bus' : 'truck';
+
+      const subPill = (status) => {
+        const s = { Active: { c: '#3E7A00', bg: 'rgba(101,178,0,.12)' }, Expired: { c: '#F23E44', bg: 'rgba(242,62,68,.10)' }, Inactive: { c: '#797F82', bg: '#F4F4F4' } }[status] || { c: '#797F82', bg: '#F4F4F4' };
+        return <span style={{ fontSize: 12, fontWeight: 600, color: s.c, background: s.bg, padding: '2px 8px', borderRadius: 999 }}>{status}</span>;
+      };
+
+      const cfgCell = (status) => {
+        if (!status) return <span style={{ color: '#BBBEC0' }}>N/A</span>;
+        const m = { failed: { c: '#F23E44', icon: 'alert-circle', label: 'Failed' }, queued: { c: '#1087D2', icon: 'clock', label: 'Pending' }, applied: { c: '#3E7A00', icon: 'check', label: 'Applied' } }[status];
+        return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: m.c }}><i data-lucide={m.icon} style={{ width: 13, height: 13 }} />{m.label}</span>;
+      };
+
+      const filtered = CAMERAS_DATA.filter(c => !search || [c.id, c.vehicle, c.brand].some(v => v.toLowerCase().includes(search.toLowerCase())));
+
+      return (
+        <div className="app-shell" style={{ background: '#F4F4F4', fontFamily: 'Inter, system-ui, sans-serif', color: '#1F292F' }}>
+          <CfgTopBar />
+          <div className="app-body">
+            <div className="icon-sidebar" style={{ flexShrink: 0 }}><CfgSidebarIcons /></div>
+            <div className="app-main">
+
+              {/* Title */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Camera settings</h1>
+                <i data-lucide="info" style={{ width: 16, height: 16, color: '#BBBEC0' }} />
+              </div>
+
+              {/* Alert banner */}
+              <div style={{ background: 'rgba(242,62,68,.04)', border: '1px solid rgba(242,62,68,.5)', borderRadius: 4, padding: '10px 16px', marginBottom: 20, fontSize: 13, color: '#384045', display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span>Video loss issue in vehicle TESTAM</span>
+                <a href="#" style={{ color: '#65B200', fontWeight: 600 }}>Read more</a>
+              </div>
+
+              {/* Stat cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
+                {[
+                  { label: 'Camera warnings',       value: 7, color: '#FFB300' },
+                  { label: 'Subscription issues',   value: 2, color: '#F23E44' },
+                  { label: 'Configuration pending', value: 1, color: '#1087D2' },
+                  { label: 'Configuration failed',  value: 1, color: '#F23E44' },
+                ].map(s => (
+                  <div key={s.label} style={{ background: '#fff', border: '1px solid #E4E5E6', borderRadius: 4, padding: '14px 18px' }}>
+                    <div style={{ fontSize: 12, color: '#797F82', marginBottom: 6 }}>{s.label}</div>
+                    <div style={{ fontSize: 26, fontWeight: 700, color: s.color }}>{s.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Page tabs */}
+              <div style={{ display: 'flex', gap: 28, borderBottom: '1px solid #E4E5E6', marginBottom: 20 }}>
+                {['Overview', 'Integrations', 'Audit log'].map((t, i) => (
+                  <button key={t} style={{ border: 'none', background: 'transparent', padding: '10px 0', fontFamily: 'inherit', fontSize: 14, fontWeight: i === 0 ? 700 : 500, color: i === 0 ? '#1F292F' : '#797F82', cursor: 'pointer', borderBottom: `2px solid ${i === 0 ? '#65B200' : 'transparent'}`, marginBottom: -1 }}>{t}</button>
+                ))}
+              </div>
+
+              {/* Filters */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>DVR warnings</span>
+                <div style={{ position: 'relative' }}>
+                  <select style={{ height: 34, padding: '0 30px 0 10px', border: '1px solid #E4E5E6', borderRadius: 4, fontFamily: 'inherit', fontSize: 13, appearance: 'none', background: '#fff', cursor: 'pointer' }}>
+                    <option>All</option>
+                  </select>
+                  <i data-lucide="chevron-down" style={{ position: 'absolute', right: 8, top: 9, width: 14, height: 14, color: '#797F82', pointerEvents: 'none' }} />
+                </div>
+                <div style={{ marginLeft: 'auto', position: 'relative' }}>
+                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search"
+                    style={{ height: 34, padding: '0 32px 0 10px', border: '1px solid #E4E5E6', borderRadius: 4, fontFamily: 'inherit', fontSize: 13, width: 200, outline: 'none' }}
+                    onFocus={e => e.target.style.borderColor = '#65B200'}
+                    onBlur={e => e.target.style.borderColor = '#E4E5E6'}
+                  />
+                  <i data-lucide="search" style={{ position: 'absolute', right: 8, top: 9, width: 14, height: 14, color: '#BBBEC0', pointerEvents: 'none' }} />
+                </div>
+              </div>
+
+              {/* Table */}
+              <div style={{ background: '#fff', border: '1px solid #E4E5E6', borderRadius: 4, overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #E4E5E6', background: '#F7F8F8' }}>
+                      {['Camera warnings', 'Linked vehicle', 'Vehicle type', 'Camera ID', 'Brand', 'Channels', 'Subscription', 'Expiry', 'Config status', 'Edit settings'].map(h => (
+                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#384045', whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((cam, i) => (
+                      <tr key={cam.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid #F4F4F4' : 'none' }}>
+                        <td style={{ padding: '12px 14px' }}>
+                          {cam.warningsOk
+                            ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: '#3E7A00' }}><i data-lucide="check-circle" style={{ width: 14, height: 14 }} /> All good</span>
+                            : <button style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, color: '#F23E44', fontWeight: 600, fontFamily: 'inherit', fontSize: 13 }}>
+                                <i data-lucide="alert-circle" style={{ width: 14, height: 14 }} /> View warnings ({cam.warnings})
+                              </button>
+                          }
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            <i data-lucide="pencil" style={{ width: 12, height: 12, color: '#BBBEC0' }} />
+                            <a href="#" style={{ color: '#1087D2', fontWeight: 600 }} onClick={e => e.preventDefault()}>{cam.vehicle}</a>
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#384045' }}>
+                            <i data-lucide={vehicleIcon(cam.vehicleType)} style={{ width: 14, height: 14, color: '#797F82' }} />
+                            {cam.vehicleType}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 14px', color: '#384045' }}>{cam.id}</td>
+                        <td style={{ padding: '12px 14px', color: '#384045', whiteSpace: 'nowrap' }}>{cam.brand}</td>
+                        <td style={{ padding: '12px 14px', color: '#384045', textAlign: 'center' }}>{cam.channels}</td>
+                        <td style={{ padding: '12px 14px' }}>{subPill(cam.subscription)}</td>
+                        <td style={{ padding: '12px 14px', color: '#797F82', fontSize: 12, whiteSpace: 'nowrap' }}>{cam.subscriptionExpiry || '—'}</td>
+                        <td style={{ padding: '12px 14px' }}>{cfgCell(cam.configStatus)}</td>
+                        <td style={{ padding: '12px 14px' }}>
+                          {cam.subscription === 'Active'
+                            ? <button onClick={() => onSelectCamera(cam)} style={{ background: 'none', border: 'none', padding: 6, cursor: 'pointer', color: '#797F82', display: 'grid', placeItems: 'center', borderRadius: 4 }}>
+                                <i data-lucide="pencil" style={{ width: 15, height: 15 }} />
+                              </button>
+                            : <span style={{ color: '#BBBEC0' }}>—</span>
+                          }
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ── App with navigation ─────────────────────────────────────
+    function App() {
+      const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
+      const [selectedCamera, setSelectedCamera] = useState(null);
+
+      const openCamera = (camera) => {
+        const scenario = CONFIG_STATUS_TO_SCENARIO[camera.configStatus] || 'in-sync';
+        const online = camera.configStatus !== 'queued';
+        setSelectedCamera(camera);
+        setTweaks(t => ({ ...t, scenario, online }));
+      };
+
+      useEffect(() => {
+        const r = () => window.lucide && window.lucide.createIcons();
+        r(); setTimeout(r, 60); setTimeout(r, 300); setTimeout(r, 900);
+      }, [tweaks, selectedCamera]);
+
+      return (
+        <>
+          {selectedCamera
+            ? <CameraConfigScreen
+                variation={tweaks.variation}
+                scenario={tweaks.scenario}
+                online={tweaks.online}
+                lastSeen={tweaks.online ? '2 minutes ago' : '4 hours ago'}
+                cameraId={selectedCamera.id}
+                cameraBrand={selectedCamera.brand}
+                cameraChannels={selectedCamera.channels}
+                onBack={() => setSelectedCamera(null)}
+              />
+            : tweaks.viewMode === 'canvas'
+              ? <CompareCanvas tweaks={tweaks} />
+              : <CameraListScreen onSelectCamera={openCamera} />
+          }
+          <TweaksPanel tweaks={tweaks} setTweaks={setTweaks} />
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<ErrorBoundary><App /></ErrorBoundary>);
+  </script>
+</body>
+</html>
