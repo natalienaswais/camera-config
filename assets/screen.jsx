@@ -4,35 +4,35 @@
 const TABS = [
   { key: 'details', label: 'Camera details' },
   { key: 'settings', label: 'Camera settings' },
-  { key: 'security', label: 'Camera security' },
+  { key: 'security', label: 'Camera safety' },
 ];
 
 const StatusBadge = ({ status, pendingCount, failedCount }) => {
   if (status === 'idle') {
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#65B200', background: 'rgba(101,178,0,.1)', padding: '3px 9px', borderRadius: 999 }}>
-        <i data-lucide="check" style={{ width: 11, height: 11 }} /> In sync
+        <Icon name="check" style={{ width: 11, height: 11 }} /> In sync
       </span>
     );
   }
   if (status === 'syncing') {
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#1087D2', background: 'rgba(180,199,255,.25)', padding: '3px 9px', borderRadius: 999 }}>
-        <i data-lucide="refresh-cw" style={{ width: 11, height: 11, animation: 'spin 1.2s linear infinite' }} /> Syncing {pendingCount}
+        <Icon name="refresh-cw" style={{ width: 11, height: 11, animation: 'spin 1.2s linear infinite' }} /> Syncing {pendingCount}
       </span>
     );
   }
   if (status === 'queued') {
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#1087D2', background: 'rgba(16,135,210,.1)', padding: '3px 9px', borderRadius: 999 }}>
-        <i data-lucide="clock" style={{ width: 11, height: 11 }} /> {pendingCount} queued
+        <Icon name="clock" style={{ width: 11, height: 11 }} /> {pendingCount} scheduled
       </span>
     );
   }
   if (status === 'partial' || status === 'failed') {
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#F23E44', background: 'rgba(242,62,68,.1)', padding: '3px 9px', borderRadius: 999 }}>
-        <i data-lucide="alert-circle" style={{ width: 11, height: 11 }} /> {failedCount} failed
+        <Icon name="alert-circle" style={{ width: 11, height: 11 }} /> {failedCount} failed
       </span>
     );
   }
@@ -47,7 +47,7 @@ const StatusBadgeLarge = ({ status, pendingCount, failedCount }) => {
   } else if (status === 'syncing') {
     pill = { label: `Syncing ${pendingCount}…`, color: '#1087D2', bg: 'rgba(180,199,255,.25)', border: '#B4C7FF', icon: 'refresh-cw', spin: true };
   } else if (status === 'queued') {
-    pill = { label: `${pendingCount} queued`, color: '#1087D2', bg: 'rgba(16,135,210,.1)', border: 'rgba(16,135,210,.3)', icon: 'clock', spin: false };
+    pill = { label: `${pendingCount} scheduled`, color: '#1087D2', bg: 'rgba(16,135,210,.1)', border: 'rgba(16,135,210,.3)', icon: 'clock', spin: false };
   } else {
     pill = { label: 'In sync', color: '#65B200', bg: 'rgba(101,178,0,.12)', border: 'rgba(101,178,0,.3)', icon: 'check', spin: false };
   }
@@ -58,7 +58,7 @@ const StatusBadgeLarge = ({ status, pendingCount, failedCount }) => {
       color: pill.color, background: pill.bg, border: `1px solid ${pill.border}`,
       padding: '5px 10px', borderRadius: 999,
     }}>
-      <i data-lucide={pill.icon} style={{ width: 13, height: 13, ...(pill.spin ? { animation: 'spin 1.2s linear infinite' } : {}) }} />
+      <Icon name={pill.icon} style={{ width: 13, height: 13, ...(pill.spin ? { animation: 'spin 1.2s linear infinite' } : {}) }} />
       {pill.label}
     </span>
   );
@@ -68,7 +68,7 @@ const ConnectivityIndicator = ({ online, lastSeen }) => {
   if (online) {
     return (
       <div key="hdr-on" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#797F82' }}>
-        <i data-lucide="wifi" style={{ width: 14, height: 14, color: '#65B200' }} />
+        <Icon name="wifi" style={{ width: 14, height: 14, color: '#65B200' }} />
         <span>Online · synced {lastSeen}</span>
       </div>
     );
@@ -79,7 +79,7 @@ const ConnectivityIndicator = ({ online, lastSeen }) => {
       color: '#F23E44', background: 'rgba(242,62,68,.1)', border: '1px solid rgba(242,62,68,.25)',
       padding: '3px 10px', borderRadius: 999,
     }}>
-      <i data-lucide="wifi-off" style={{ width: 13, height: 13 }} />
+      <Icon name="wifi-off" style={{ width: 13, height: 13 }} />
       <span>Offline · last seen {lastSeen}</span>
     </div>
   );
@@ -87,8 +87,8 @@ const ConnectivityIndicator = ({ online, lastSeen }) => {
 
 // ── Main screen ──────────────────────────────────────────────
 
-const CameraConfigScreen = ({ scenario = 'in-sync', variation = 'inline', online = true, lastSeen = '2 minutes ago', statusPlacement = 'sidebar', cameraId = '3333', cameraBrand = 'Quicklink', onBack }) => {
-  const cfg = useCameraConfig(scenario);
+const CameraConfigScreen = ({ scenario = 'in-sync', variation = 'inline', online = true, lastSeen = '2 minutes ago', cameraId = '3333', cameraBrand = DEFAULT_BRAND, cameraChannels = 3, onBack }) => {
+  const cfg = useCameraConfig(scenario, cameraBrand);
   const [tab, setTab] = React.useState('details');
   const V = VARIATIONS[variation] || VARIATIONS.inline;
   const FieldRow = V.FieldRow;
@@ -101,13 +101,18 @@ const CameraConfigScreen = ({ scenario = 'in-sync', variation = 'inline', online
     setTimeout(r, 200);
   });
 
-  // Per-tab counts for dot indicators
+  // Per-tab counts for tab badges
   const pendingByTab = React.useMemo(() => {
     const m = { details: 0, settings: 0, security: 0 };
     cfg.pendingKeys.forEach(k => { const t = FIELD_META[k]?.tab; if (t) m[t]++; });
+    return m;
+  }, [cfg.pendingKeys]);
+
+  const dirtyByTab = React.useMemo(() => {
+    const m = { details: 0, settings: 0, security: 0 };
     cfg.dirtyKeys.forEach(k => { const t = FIELD_META[k]?.tab; if (t && !cfg.pendingKeys.includes(k)) m[t]++; });
     return m;
-  }, [cfg.pendingKeys, cfg.dirtyKeys]);
+  }, [cfg.dirtyKeys, cfg.pendingKeys]);
 
   const failedByTab = React.useMemo(() => {
     const m = { details: 0, settings: 0, security: 0 };
@@ -115,25 +120,12 @@ const CameraConfigScreen = ({ scenario = 'in-sync', variation = 'inline', online
     return m;
   }, [cfg.failedKeys]);
 
-  // Activity history: prepend pending/failed pseudo-entries so the sidebar
-  // always reflects current sync state.
+  // Activity history: chronological log of all submitted changes + static historical
+  // entries for THIS camera's brand (Howen and Queclink fan out very differently).
   const activity = React.useMemo(() => {
-    const pseudo = [];
-    cfg.failedKeys.forEach((k) => pseudo.push({
-      id: 'failed-' + k, title: `${FIELD_META[k]?.label || k} failed`,
-      diff: `${formatValue(k, cfg.liveValue(k))} → ${formatValue(k, cfg.pendingValue(k) ?? cfg.draftValue(k))}`,
-      when: 'just now', status: 'failed',
-    }));
-    cfg.pendingKeys.slice(0, 2).forEach(k => {
-      if (cfg.failedKeys.includes(k)) return;
-      pseudo.push({
-        id: 'pend-' + k, title: `${FIELD_META[k]?.label || k} updated`,
-        diff: `${formatValue(k, cfg.liveValue(k))} → ${formatValue(k, cfg.pendingValue(k))}`,
-        when: 'syncing', status: 'pending',
-      });
-    });
-    return [...pseudo, ...ACTIVITY];
-  }, [cfg.failedKeys, cfg.pendingKeys, cfg.state]);
+    const brandHistory = ACTIVITY_BY_BRAND[cameraBrand] || ACTIVITY_BY_BRAND[DEFAULT_BRAND];
+    return [...cfg.submissionLog, ...brandHistory];
+  }, [cfg.submissionLog, cameraBrand]);
 
   const unsavedCount = cfg.dirtyKeys.length;
 
@@ -147,11 +139,6 @@ const CameraConfigScreen = ({ scenario = 'in-sync', variation = 'inline', online
             cameraId={cameraId}
             cameraBrand={cameraBrand}
             onBack={onBack}
-            statusBadge={
-              statusPlacement === 'header'
-                ? <StatusBadgeLarge status={cfg.state.syncStatus} pendingCount={cfg.pendingKeys.length} failedCount={cfg.failedKeys.length} />
-                : <StatusBadge status={cfg.state.syncStatus} pendingCount={cfg.pendingKeys.length} failedCount={cfg.failedKeys.length} />
-            }
           />
 
           <div className="app-columns">
@@ -163,19 +150,20 @@ const CameraConfigScreen = ({ scenario = 'in-sync', variation = 'inline', online
                 syncStatus={cfg.state.syncStatus}
                 pendingCount={cfg.pendingKeys.length}
                 failedCount={cfg.failedKeys.length}
-                hideStatusPill={statusPlacement === 'header'}
+                hideStatusPill={true}
+                cameraId={cameraId}
               />
             </div>
 
             <div className="form-col">
-              <CfgTabs tabs={TABS} active={tab} onChange={setTab} pendingByTab={pendingByTab} failedByTab={failedByTab} />
+              <TopBanner cfg={cfg} online={online} />
 
-              <TopBanner cfg={cfg} />
+              <CfgTabs tabs={TABS} active={tab} onChange={setTab} pendingByTab={pendingByTab} failedByTab={failedByTab} dirtyByTab={dirtyByTab} />
 
               <TabBody>
-                {tab === 'details'  && <TabDetails  cfg={cfg} FieldRow={FieldRow} />}
-                {tab === 'settings' && <TabSettings cfg={cfg} FieldRow={FieldRow} />}
-                {tab === 'security' && <TabSecurity cfg={cfg} FieldRow={FieldRow} />}
+                {tab === 'details'  && <TabDetails  cfg={cfg} FieldRow={FieldRow} brand={cameraBrand} channelCount={cameraChannels} />}
+                {tab === 'settings' && <TabSettings cfg={cfg} FieldRow={FieldRow} brand={cameraBrand} channelCount={cameraChannels} />}
+                {tab === 'security' && <TabSecurity cfg={cfg} FieldRow={FieldRow} brand={cameraBrand} />}
               </TabBody>
 
               {unsavedCount > 0 && (() => {
@@ -199,15 +187,17 @@ const CameraConfigScreen = ({ scenario = 'in-sync', variation = 'inline', online
                           <span style={{ fontWeight: 600, color: '#1F292F' }}>{unsavedCount}</span> unsaved change{unsavedCount === 1 ? '' : 's'} across all tabs.{' '}
                           {online
                             ? <>Saving will push every change to the camera.</>
-                            : <>Camera is offline — changes will be queued and sent when it comes online.</>}
+                            : <>Camera is offline — changes will be scheduled and sent when it comes online.</>}
                         </>
                       )}
                     </div>
                     <CfgButton variant="danger" size="sm" onClick={cfg.discard}>
                       {hasFailed ? 'Discard new edits' : 'Discard changes'}
                     </CfgButton>
-                    <CfgButton variant="primary" size="sm" onClick={cfg.submit}>
-                      {hasFailed ? `Save all (${totalCount})` : `Save (${unsavedCount}) change${unsavedCount === 1 ? '' : 's'}`}
+                    <CfgButton variant="primary" size="sm" onClick={() => cfg.submit(online)}>
+                      {hasFailed
+                        ? (online ? `Save all (${totalCount})` : `Schedule all (${totalCount})`)
+                        : (online ? `Save (${unsavedCount}) change${unsavedCount === 1 ? '' : 's'}` : `Schedule (${unsavedCount}) change${unsavedCount === 1 ? '' : 's'}`)}
                     </CfgButton>
                   </div>
                 );

@@ -1,6 +1,5 @@
 /* ============================================================
-   Mapon Design System — colors & type tokens
-   Source of truth: /BRAND-BOOK.fig (BB-2023 page)
+   Design System — colors & type tokens
    ============================================================ */
 
 /* Inter — shipped locally (18pt optical size for body/UI, 28pt for display).
@@ -25,19 +24,19 @@
 
 :root {
   /* ---- Primary brand colors (logo / CTAs) ---- */
-  --mapon-green:       #98CA02; /* Pantone 368 C — "Green" */
-  --mapon-dark-green:  #65B200; /* Pantone 368 C — "Dark Green" — primary CTA */
-  --mapon-dark:        #1F292F; /* Pantone 433 C — "Dark" — text / bg */
-  --mapon-light-grey:  #F4F4F4; /* Pantone P 179-1 C — "Light grey" */
+  --brand-green:       #98CA02; /* Pantone 368 C — "Green" */
+  --brand-dark-green:  #65B200; /* Pantone 368 C — "Dark Green" — primary CTA */
+  --brand-dark:        #1F292F; /* Pantone 433 C — "Dark" — text / bg */
+  --brand-light-grey:  #F4F4F4; /* Pantone P 179-1 C — "Light grey" */
 
   /* ---- Accent colors (marketing / illustration) ---- */
-  --mapon-orange:      #FF996D; /* 1565 C */
-  --mapon-dark-blue:   #222E50; /* 533 C  */
-  --mapon-yellow:      #FFC652; /* 135 C  */
-  --mapon-salmon:      #FC8F88; /* 170 U  */
-  --mapon-kindablue:   #B4C7FF; /* 2716 U */
-  --mapon-lightgreen:  #CBF3F0; /* 317 C  */
-  --mapon-medium-blue: #5B84FD; /* 2727 C */
+  --brand-orange:      #FF996D; /* 1565 C */
+  --brand-dark-blue:   #222E50; /* 533 C  */
+  --brand-yellow:      #FFC652; /* 135 C  */
+  --brand-salmon:      #FC8F88; /* 170 U  */
+  --brand-kindablue:   #B4C7FF; /* 2716 U */
+  --brand-lightgreen:  #CBF3F0; /* 317 C  */
+  --brand-medium-blue: #5B84FD; /* 2727 C */
 
   /* ---- Monochrome scale (UI surfaces, text) ---- */
   --mono-black:   #000000;
@@ -66,9 +65,9 @@
   --border-1:     var(--mono-gray-5);
   --border-2:     var(--mono-gray-4);
 
-  --accent:       var(--mapon-dark-green); /* primary CTA bg */
+  --accent:       var(--brand-dark-green); /* primary CTA bg */
   --accent-hover: #569A00;                 /* ~10% darker */
-  --accent-text:  var(--mapon-dark-green);
+  --accent-text:  var(--brand-dark-green);
 
   /* ---- Type ---- */
   --font-sans: 'Inter', system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
@@ -170,4 +169,4 @@ a:hover  { text-decoration: underline; }
 
 code, kbd, samp { font-family: var(--font-mono); font-size: 0.9em; background: var(--bg-muted); padding: 2px 6px; border-radius: 4px; }
 
-::selection { background: var(--mapon-green); color: var(--mapon-dark); }
+::selection { background: var(--brand-green); color: var(--brand-dark); }

@@ -69,7 +69,7 @@ const DiffChipStable = ({ liveText, pendingText, tone = 'pending', failureReason
         color: colors.liveColor, textDecoration: 'line-through',
         overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '0 1 auto',
       }}>{liveText}</span>
-      <i data-lucide="arrow-right" style={{ width: 10, height: 10, color: colors.arrow, flexShrink: 0 }} />
+      <Icon name="arrow-right" style={{ width: 10, height: 10, color: colors.arrow, flexShrink: 0 }} />
       <span style={{
         color: colors.pendColor, fontWeight: 600,
         overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: '1 1 auto',
@@ -80,14 +80,10 @@ const DiffChipStable = ({ liveText, pendingText, tone = 'pending', failureReason
 
 const FieldRow_A = ({ fieldKey, label, children, status, liveText, pendingText, draftText, failureReason, indent, stackLabel }) => {
   const bp = React.useContext(RowBpContext);
-  const showDiff = status === 'pending' || status === 'failed' || (status === 'dirty' && draftText !== liveText);
-  const displayedLive = liveText;
+  const showDiff = status === 'pending' || status === 'failed' || status === 'dirty';
+  const displayedLive = (status === 'dirty' && pendingText != null) ? pendingText : liveText;
   const displayedPending = status === 'dirty' ? draftText : (pendingText || draftText);
 
-  // Responsive grid:
-  //  wide   — label | input(360) | diff(280) on one row, fixed 56px
-  //  mid    — label | input | diff below input (wraps), auto height
-  //  narrow — label stacked above input, diff below, auto height
   let gridCols, rowHeight;
   if (stackLabel) {
     gridCols = '1fr auto'; rowHeight = 'auto';
@@ -134,7 +130,7 @@ const FieldRow_A = ({ fieldKey, label, children, status, liveText, pendingText, 
           />
           {status === 'failed' && (
             <span title={failureReason} style={{ color: '#F23E44', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-              <i data-lucide="alert-circle" style={{ width: 14, height: 14 }} />
+              <Icon name="alert-circle" style={{ width: 14, height: 14 }} />
             </span>
           )}
         </div>
@@ -145,11 +141,11 @@ const FieldRow_A = ({ fieldKey, label, children, status, liveText, pendingText, 
   );
 };
 
-const TopBanner_A = ({ cfg }) => {
+const TopBanner_A = ({ cfg, online = true }) => {
   if (cfg.state.syncStatus === 'idle' && cfg.dirtyKeys.length === 0) return null;
   const s = cfg.state.syncStatus;
   const banners = {
-    queued:   { bg: 'rgba(16,135,210,.08)', border: 'rgba(16,135,210,.3)', icon: 'clock',        text: `${cfg.pendingKeys.length} change(s) queued — waiting for camera to come online` },
+    queued:   { bg: 'rgba(16,135,210,.08)', border: 'rgba(16,135,210,.3)', icon: 'clock',        text: `${cfg.pendingKeys.length} change(s) scheduled — waiting for camera to come online` },
     syncing:  { bg: 'rgba(180,199,255,.2)', border: '#B4C7FF',              icon: 'refresh-cw',   text: `Syncing ${cfg.pendingKeys.length} change(s) to camera…` },
     partial:  { bg: 'rgba(242,62,68,.1)',  border: 'rgba(242,62,68,.25)',              icon: 'alert-circle', text: `${cfg.failedKeys.length} change(s) failed to sync — review highlighted fields` },
     failed:   { bg: 'rgba(242,62,68,.1)',  border: 'rgba(242,62,68,.25)',              icon: 'alert-circle', text: `Sync failed — ${cfg.failedKeys.length} change(s) could not be applied` },
@@ -159,18 +155,18 @@ const TopBanner_A = ({ cfg }) => {
 
   return (
     <div style={{ background: b.bg, border: `1px solid ${b.border}`, borderRadius: 4, padding: '10px 14px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
-      <i data-lucide={b.icon} style={{ width: 16, height: 16, color: '#1F292F', ...(s === 'syncing' ? { animation: 'spin 1.2s linear infinite' } : {}) }} />
+      <Icon name={b.icon} style={{ width: 16, height: 16, color: '#1F292F', ...(s === 'syncing' ? { animation: 'spin 1.2s linear infinite' } : {}) }} />
       <div style={{ fontSize: 13, color: '#1F292F', flex: 1 }}>{b.text}</div>
       {(s === 'partial' || s === 'failed') && (
         <>
-          <CfgButton variant="secondary" size="sm" onClick={cfg.cancelPending}>Cancel</CfgButton>
-          <CfgButton variant="primary" size="sm" onClick={cfg.retryAll}>
-            <i data-lucide="refresh-cw" style={{ width: 12, height: 12 }} /> Retry all
+          <CfgButton variant="secondary" size="sm" onClick={cfg.cancelPending}>Cancel changes</CfgButton>
+          <CfgButton variant="primary" size="sm" onClick={() => cfg.retryAll(online)} disabled={!online} title={!online ? 'Camera is offline — will schedule when online' : undefined}>
+            <Icon name="refresh-cw" style={{ width: 12, height: 12 }} /> Retry all
           </CfgButton>
         </>
       )}
       {s === 'queued' && (
-        <CfgButton variant="secondary" size="sm" onClick={cfg.cancelPending}>Cancel queue</CfgButton>
+        <CfgButton variant="secondary" size="sm" onClick={cfg.cancelPending}>Cancel changes</CfgButton>
       )}
     </div>
   );
@@ -181,7 +177,7 @@ const TopBanner_A = ({ cfg }) => {
 
 const FieldRow_B = ({ fieldKey, label, children, status, liveText, pendingText, draftText, failureReason, indent, stackLabel }) => {
   const bp = React.useContext(RowBpContext);
-  const showHint = status === 'pending' || status === 'failed';
+  const showHint = status === 'pending' || status === 'failed' || status === 'dirty';
   const cols = stackLabel
     ? '1fr auto'
     : bp === 'narrow' ? '1fr' : bp === 'mid' ? '180px 1fr' : '220px 1fr auto';
@@ -210,15 +206,14 @@ const FieldRow_B = ({ fieldKey, label, children, status, liveText, pendingText, 
             <div style={{ fontSize: 11, color: '#797F82', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
               {status === 'failed' ? (
                 <>
-                  <i data-lucide="alert-circle" style={{ width: 11, height: 11, color: '#F23E44' }} />
+                  <Icon name="alert-circle" style={{ width: 11, height: 11, color: '#F23E44' }} />
                   <span style={{ color: '#F23E44' }}>Failed — {failureReason}.</span>
                   <span>Camera is still using <strong style={{ color: '#384045' }}>{liveText}</strong></span>
                 </>
+              ) : status === 'dirty' ? (
+                <DiffChipStable liveText={(pendingText != null) ? pendingText : liveText} pendingText={draftText} tone='dirty' />
               ) : (
-                <>
-                  <i data-lucide="clock" style={{ width: 11, height: 11, color: '#1087D2' }} />
-                  <span>Camera currently uses <strong style={{ color: '#384045' }}>{liveText}</strong> — will update when synced</span>
-                </>
+                <DiffChipStable liveText={liveText} pendingText={pendingText} tone='pending' />
               )}
             </div>
           )}
@@ -241,8 +236,8 @@ const DIFF_SLOT_H = 24;
 
 const FieldRow_D = ({ fieldKey, label, children, status, liveText, pendingText, draftText, failureReason, indent, stackLabel }) => {
   const bp = React.useContext(RowBpContext);
-  const showDiff = status === 'pending' || status === 'failed' || (status === 'dirty' && draftText !== liveText);
-  const displayedLive = liveText;
+  const showDiff = status === 'pending' || status === 'failed' || status === 'dirty';
+  const displayedLive = (status === 'dirty' && pendingText != null) ? pendingText : liveText;
   const displayedPending = status === 'dirty' ? draftText : (pendingText || draftText);
 
   // Grid: label on left, right column holds input + diff-slot stacked.
@@ -289,7 +284,7 @@ const FieldRow_D = ({ fieldKey, label, children, status, liveText, pendingText, 
                 </div>
                 {status === 'failed' && (
                   <span title={failureReason} style={{ color: '#F23E44', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                    <i data-lucide="alert-circle" style={{ width: 14, height: 14 }} />
+                    <Icon name="alert-circle" style={{ width: 14, height: 14 }} />
                   </span>
                 )}
               </>
@@ -380,7 +375,7 @@ const TopBanner_C = ({ cfg }) => {
     : cfg.failedKeys.length > 0
     ? `${cfg.failedKeys.length} change(s) failed — camera is still using the old values`
     : cfg.pendingKeys.length > 0
-    ? `${cfg.pendingKeys.length} change(s) queued for sync`
+    ? `${cfg.pendingKeys.length} change(s) scheduled for sync`
     : `${cfg.dirtyKeys.length} unsaved change(s)`;
 
   const tableCols = bp === 'narrow' ? '1fr' : bp === 'mid' ? '1.2fr 1fr 100px' : '1.5fr 1fr 1fr 110px';
@@ -391,19 +386,19 @@ const TopBanner_C = ({ cfg }) => {
       boxShadow: '0 1px 2px rgba(0,0,0,.04)',
     }}>
       <div style={{ padding: '12px 16px', borderBottom: '1px solid #F4F4F4', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <i data-lucide={cfg.state.syncStatus === 'syncing' ? 'refresh-cw' : cfg.failedKeys.length ? 'alert-circle' : 'git-pull-request'}
+        <Icon name={cfg.state.syncStatus === 'syncing' ? 'refresh-cw' : cfg.failedKeys.length ? 'alert-circle' : 'git-pull-request'}
            style={{ width: 16, height: 16, color: cfg.failedKeys.length ? '#F23E44' : '#384045', ...(cfg.state.syncStatus === 'syncing' ? { animation: 'spin 1.2s linear infinite' } : {}) }} />
         <div style={{ fontSize: 13, fontWeight: 700, color: '#1F292F', flex: '1 1 200px', minWidth: 0 }}>{headline}</div>
         {cfg.failedKeys.length > 0 && (
           <>
             <CfgButton variant="secondary" size="sm" onClick={cfg.cancelPending}>Cancel</CfgButton>
             <CfgButton variant="primary" size="sm" onClick={cfg.retryAll}>
-              <i data-lucide="refresh-cw" style={{ width: 12, height: 12 }} /> Retry all
+              <Icon name="refresh-cw" style={{ width: 12, height: 12 }} /> Retry all
             </CfgButton>
           </>
         )}
         {cfg.state.syncStatus === 'queued' && (
-          <CfgButton variant="secondary" size="sm" onClick={cfg.cancelPending}>Cancel queue</CfgButton>
+          <CfgButton variant="secondary" size="sm" onClick={cfg.cancelPending}>Cancel schedule</CfgButton>
         )}
       </div>
       {bp !== 'narrow' && (
@@ -425,9 +420,9 @@ const TopBanner_C = ({ cfg }) => {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
                   <span style={{ color: '#384045', fontWeight: 600 }}>{FIELD_META[k]?.label || k}</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: t.color, background: t.bg, padding: '2px 8px', borderRadius: 999, fontWeight: 600, fontSize: 11 }}>
-                    {st === 'failed' && <i data-lucide="alert-circle" style={{ width: 11, height: 11 }} />}
-                    {st === 'pending' && <i data-lucide="clock" style={{ width: 11, height: 11 }} />}
-                    {st === 'dirty' && <i data-lucide="circle-dot" style={{ width: 11, height: 11 }} />}
+                    {st === 'failed' && <Icon name="alert-circle" style={{ width: 11, height: 11 }} />}
+                    {st === 'pending' && <Icon name="clock" style={{ width: 11, height: 11 }} />}
+                    {st === 'dirty' && <Icon name="circle-dot" style={{ width: 11, height: 11 }} />}
                     {t.label}
                   </span>
                 </div>
@@ -445,9 +440,9 @@ const TopBanner_C = ({ cfg }) => {
               <span style={{ color: '#797F82', fontFamily: 'ui-monospace, Menlo, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formatValue(k, cfg.liveValue(k))}</span>
               {bp === 'wide' && <span style={{ color: '#1F292F', fontFamily: 'ui-monospace, Menlo, monospace', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formatValue(k, newVal)}</span>}
               <span style={{ justifySelf: 'end', display: 'inline-flex', alignItems: 'center', gap: 4, color: t.color, background: t.bg, padding: '2px 8px', borderRadius: 999, fontWeight: 600, fontSize: 11 }}>
-                {st === 'failed' && <i data-lucide="alert-circle" style={{ width: 11, height: 11 }} />}
-                {st === 'pending' && <i data-lucide="clock" style={{ width: 11, height: 11 }} />}
-                {st === 'dirty' && <i data-lucide="circle-dot" style={{ width: 11, height: 11 }} />}
+                {st === 'failed' && <Icon name="alert-circle" style={{ width: 11, height: 11 }} />}
+                {st === 'pending' && <Icon name="clock" style={{ width: 11, height: 11 }} />}
+                {st === 'dirty' && <Icon name="circle-dot" style={{ width: 11, height: 11 }} />}
                 {t.label}
               </span>
             </div>
