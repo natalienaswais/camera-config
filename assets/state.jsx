@@ -182,6 +182,11 @@ function useCameraConfig(scenario = 'in-sync', brand = DEFAULT_BRAND) {
     setState(s => ({ ...s, draft: { ...s.draft, [key]: value } }));
   }, []);
 
+  // Update several draft keys at once (used for parent/children event toggles).
+  const updateDraftMany = useCallback((patch) => {
+    setState(s => ({ ...s, draft: { ...s.draft, ...patch } }));
+  }, []);
+
   const discard = useCallback(() => {
     setState(s => ({ ...s, draft: { ...(s.pending || s.live) } }));
   }, []);
@@ -320,7 +325,7 @@ function useCameraConfig(scenario = 'in-sync', brand = DEFAULT_BRAND) {
   const failureReason = useCallback((key) => (state.lastResult && state.lastResult[key] && state.lastResult[key].reason) || null, [state.lastResult]);
 
   return {
-    state, updateDraft, discard, submit, retryAll, cancelPending,
+    state, updateDraft, updateDraftMany, discard, submit, retryAll, cancelPending,
     dirtyKeys, pendingKeys, failedKeys,
     fieldStatus, liveValue, draftValue, pendingValue, failureReason,
     submissionLog: state.submissionLog || [],

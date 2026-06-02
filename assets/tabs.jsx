@@ -259,15 +259,21 @@ const RotationRow = ({ cfg, FieldRow, k, options, label }) => (
 // ── Tab 3: Camera safety ───────────────────────────────────────
 
 // Master on/off header for an event group (bold title + info + toggle).
-const EventGroupHeader = ({ cfg, masterKey, title, readOnly }) => {
+// Toggling the master cascades to every sub-event (childKeys): on → all on, off → all off.
+const EventGroupHeader = ({ cfg, masterKey, title, readOnly, childKeys = [] }) => {
   const status = cfg.fieldStatus(masterKey);
+  const onMaster = (v) => {
+    const patch = { [masterKey]: v };
+    childKeys.forEach(k => { patch[k] = v; });
+    cfg.updateDraftMany(patch);
+  };
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 0', borderBottom: '1px solid #E4E5E6' }}>
       <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: '#1F292F' }}>{title}</h2>
       <Icon name="info" style={{ width: 14, height: 14, color: '#BBBEC0' }} />
       {status && <StatusChip status={status} compact failureReason={cfg.failureReason(masterKey)} />}
       <div style={{ marginLeft: 'auto' }}>
-        <CfgToggle checked={cfg.draftValue(masterKey)} disabled={readOnly} onChange={v => cfg.updateDraft(masterKey, v)} />
+        <CfgToggle checked={cfg.draftValue(masterKey)} disabled={readOnly} onChange={onMaster} />
       </div>
     </div>
   );
@@ -276,13 +282,21 @@ const EventGroupHeader = ({ cfg, masterKey, title, readOnly }) => {
 // One expandable event block: header (chevron + label + toggle), expanding to its
 // per-event sub-parameters. `readOnly` (Queclink) shows everything but disables editing;
 // the block still expands so the configuration is visible.
-const EventAccordion = ({ cfg, FieldRow, sys, event, masterKey, params = EVENT_PARAMS, readOnly = false }) => {
+const EventAccordion = ({ cfg, FieldRow, sys, event, masterKey, params = EVENT_PARAMS, readOnly = false, siblingKeys = [] }) => {
   const [open, setOpen] = React.useState(false);
   const masterOn = cfg.draftValue(masterKey);
   const enKey = eventEnabledKey(sys, event.key);
   const enabled = cfg.draftValue(enKey);
   const canExpand = readOnly || masterOn;          // read-only events can still be viewed
   const labelLit = readOnly || masterOn;           // dark label when viewable
+
+  // Toggling a sub-event off: if it was the last one on, switch the master group off too.
+  const onToggle = (v) => {
+    if (v) { cfg.updateDraft(enKey, true); return; }
+    const anyOtherOn = siblingKeys.some(k => k !== enKey && cfg.draftValue(k));
+    if (anyOtherOn) cfg.updateDraft(enKey, false);
+    else cfg.updateDraftMany({ [enKey]: false, [masterKey]: false });
+  };
 
   const allKeys = [enKey, ...params.map(p => eventParamKey(sys, event.key, p.param))];
   const agg = ['failed', 'pending', 'dirty'].find(s => allKeys.some(k => cfg.fieldStatus(k) === s)) || null;
@@ -300,7 +314,7 @@ const EventAccordion = ({ cfg, FieldRow, sys, event, masterKey, params = EVENT_P
         </button>
         <span style={{ flex: 1, fontSize: 15, color: labelLit ? '#1F292F' : '#797F82', minWidth: 0 }}>{event.label}</span>
         {agg && !open && <StatusChip status={agg} compact />}
-        <CfgToggle checked={enabled} disabled={readOnly || !masterOn} onChange={v => cfg.updateDraft(enKey, v)} />
+        <CfgToggle checked={enabled} disabled={readOnly || !masterOn} onChange={onToggle} />
       </div>
 
       {open && (
@@ -384,6 +398,13 @@ const TabSecurity = ({ cfg, FieldRow, brand = DEFAULT_BRAND }) => {
   // DMS/ADAS render the brand's param subset (Howen omits Post-event duration).
   const dmsParams = EVENT_PARAMS.filter(p => ui.eventParams.includes(p.param));
 
+  const dmsList = pickEvents(DMS_EVENTS, ui.dmsEvents);
+  const adasList = pickEvents(ADAS_EVENTS, ui.adasEvents);
+  const harshList = pickEvents(HARSH_EVENTS, ui.harshEvents);
+  const dmsChildKeys = dmsList.map(ev => eventEnabledKey('dms', ev.key));
+  const adasChildKeys = adasList.map(ev => eventEnabledKey('adas', ev.key));
+  const harshChildKeys = harshList.map(ev => eventEnabledKey('harsh', ev.key));
+
   return (
     <div>
       <p style={{ fontSize: 13, color: '#797F82', marginBottom: 12 }}>
@@ -404,24 +425,24 @@ const TabSecurity = ({ cfg, FieldRow, brand = DEFAULT_BRAND }) => {
       {ui.showOverspeed && <OverspeedSection cfg={cfg} FieldRow={FieldRow} />}
 
       <div style={{ marginTop: 22 }}>
-        <EventGroupHeader cfg={cfg} masterKey="dmsEvents" title="DMS Events" readOnly={readOnly} />
-        {pickEvents(DMS_EVENTS, ui.dmsEvents).map(ev => (
-          <EventAccordion key={ev.key} cfg={cfg} FieldRow={FieldRow} sys="dms" event={ev} masterKey="dmsEvents" params={dmsParams} readOnly={readOnly} />
+        <EventGroupHeader cfg={cfg} masterKey="dmsEvents" title="DMS Events" readOnly={readOnly} childKeys={dmsChildKeys} />
+        {dmsList.map(ev => (
+          <EventAccordion key={ev.key} cfg={cfg} FieldRow={FieldRow} sys="dms" event={ev} masterKey="dmsEvents" params={dmsParams} readOnly={readOnly} siblingKeys={dmsChildKeys} />
         ))}
       </div>
 
       <div style={{ marginTop: 28 }}>
-        <EventGroupHeader cfg={cfg} masterKey="adasEvents" title="ADAS Events" readOnly={readOnly} />
-        {pickEvents(ADAS_EVENTS, ui.adasEvents).map(ev => (
-          <EventAccordion key={ev.key} cfg={cfg} FieldRow={FieldRow} sys="adas" event={ev} masterKey="adasEvents" params={dmsParams} readOnly={readOnly} />
+        <EventGroupHeader cfg={cfg} masterKey="adasEvents" title="ADAS Events" readOnly={readOnly} childKeys={adasChildKeys} />
+        {adasList.map(ev => (
+          <EventAccordion key={ev.key} cfg={cfg} FieldRow={FieldRow} sys="adas" event={ev} masterKey="adasEvents" params={dmsParams} readOnly={readOnly} siblingKeys={adasChildKeys} />
         ))}
       </div>
 
       {ui.showHarsh && (
         <div style={{ marginTop: 28 }}>
-          <EventGroupHeader cfg={cfg} masterKey="harshEvents" title="Harsh Events" readOnly={readOnly} />
-          {pickEvents(HARSH_EVENTS, ui.harshEvents).map(ev => (
-            <EventAccordion key={ev.key} cfg={cfg} FieldRow={FieldRow} sys="harsh" event={ev} masterKey="harshEvents" params={ev.params || HARSH_PARAMS} readOnly={readOnly} />
+          <EventGroupHeader cfg={cfg} masterKey="harshEvents" title="Harsh Events" readOnly={readOnly} childKeys={harshChildKeys} />
+          {harshList.map(ev => (
+            <EventAccordion key={ev.key} cfg={cfg} FieldRow={FieldRow} sys="harsh" event={ev} masterKey="harshEvents" params={ev.params || HARSH_PARAMS} readOnly={readOnly} siblingKeys={harshChildKeys} />
           ))}
         </div>
       )}
